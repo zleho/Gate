@@ -19,3 +19,4 @@ cmake-build-*
 /source/io_old/
 /source/save_bug/
 
+.vscode
