@@ -4,6 +4,7 @@
 #include "GateCrfActorMessenger.hh"
 #include "GateObjectStore.hh"
 #include "GateMiscFunctions.hh"
+#include "G4Gamma.hh"
 
 GateCrfActor::GateCrfActor(G4String name, G4int depth)
     : GateVActor(name, depth), _messenger(new GateCrfActorMessenger(this)),
@@ -134,26 +135,19 @@ void GateCrfActor::Describe()
 
 void GateCrfActor::UserSteppingAction(const GateVVolume*, const G4Step* step)
 {
-    const G4VEmProcess *process = dynamic_cast<const G4VEmProcess*>(
-        step->GetPostStepPoint()->GetProcessDefinedStep()
-    );
-    
-    if(!process)
+    if (step->GetTrack()->GetParticleDefinition() != G4Gamma::Gamma())
     {
-        // we don't care about non-EM processes
         return;
     }
 
     if (_events.empty())
     {
-        // this is the first EM step in SPECT head
+        // this is the first step in SPECT head
         // we assume that this is the primary photon
         _events.emplace_back();
 
-        // transform position and direction into current volume's coordinate system
-        const auto* theTouchable = dynamic_cast<const G4TouchableHistory*>(step->GetPreStepPoint()->GetTouchable());
-        auto start_pos = theTouchable->GetHistory()->GetTopTransform().TransformPoint(step->GetTrack()->GetVertexPosition());
-        auto start_dir = theTouchable->GetHistory()->GetTopTransform().TransformAxis(step->GetTrack()->GetVertexMomentumDirection());
+        auto start_pos = step->GetTrack()->GetVertexPosition();
+        auto start_dir = step->GetTrack()->GetVertexMomentumDirection();
 
         if (_debugLevel > 1)
         {
@@ -164,6 +158,7 @@ void GateCrfActor::UserSteppingAction(const GateVVolume*, const G4Step* step)
         // X is along width
         // Y is along height
         // Z=cross(X, Y) is into the camera
+        // here we assume that (0,0) is the detector center on the detector's plane
         _events.back().in_x_mm = start_pos.dot(_orientation[0]);
         _events.back().in_y_mm = start_pos.dot(_orientation[1]);
 
@@ -185,6 +180,16 @@ void GateCrfActor::UserSteppingAction(const GateVVolume*, const G4Step* step)
         _events.back().photon_id = step->GetTrack()->GetTrackID();
     }
 
+    const G4VEmProcess *process = dynamic_cast<const G4VEmProcess*>(
+        step->GetPostStepPoint()->GetProcessDefinedStep()
+    );
+
+    if(!process)
+    {
+        // we don't care about non-EM processes
+        return;
+    }
+
     if (step->GetTrack()->GetTrackID() != _events.back().photon_id)
     {
         // this is the first EM step of a secondary photon;
@@ -203,9 +208,11 @@ void GateCrfActor::UserSteppingAction(const GateVVolume*, const G4Step* step)
         if (process->GetProcessName() == "Compton" || process->GetProcessName() == "compt" ||
             process->GetProcessName() == "PhotoElectric" || process->GetProcessName() == "phot")
         {
-            // G4cout << "compton or photoelevtric in crystal\n";
+            // G4cout << "compton or photoelectric in crystal\n";
             double energy_MeV = step->GetTotalEnergyDeposit();
             const auto* theTouchable = dynamic_cast<const G4TouchableHistory*>(step->GetPreStepPoint()->GetTouchable());
+
+            // transform position into world frame
             auto local_pos = theTouchable->GetHistory()->GetTopTransform().TransformPoint(step->GetPreStepPoint()->GetPosition());
             double x_mm = local_pos.dot(_orientation[0]);
             double y_mm = local_pos.dot(_orientation[1]);
