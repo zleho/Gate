@@ -11,9 +11,8 @@ class GateCrfActorMessenger;
 
 #define MAX_VOLUME_NAME 32
 
-struct CrfEventStats
+struct CrfEvent
 {
-    int event_id;
     // incoming photon position on detector surface
     double in_x_mm;
     double in_y_mm;
@@ -25,9 +24,6 @@ struct CrfEventStats
 
     // incoming energy of photon
     double in_energy_MeV;
-
-    int photon_id; // 0 for primary photon, >0 for secondary photons
-    int crystal_pass; // starts from zero, increased when photon exits crystal after interaction with energy deposition
 
     // energy is sum of all energy deposition (compton and photo) of photon
     // position is energy weighted position of all interactions within the crystal
@@ -41,23 +37,20 @@ struct CrfEventStats
     int compton_num;
     int rayleigh_num;
     
-    char compton_volume[MAX_VOLUME_NAME + 1];
-    char rayleigh_volume[MAX_VOLUME_NAME + 1];
+    bool primary_hit;
+    bool secondary_hit;
 
-    CrfEventStats()
+    CrfEvent()
     {
-        event_id = -1;
         in_x_mm = in_y_mm = 0.0;
         in_phi_rad = in_theta_rad = 0.0;
         in_energy_MeV = 0.0;
         detected_x_mm = detected_y_mm = 0.0;
         detected_energy_MeV = 0.0;
-        photon_id = 0;
-        crystal_pass = 0;
         compton_num = 0;
         rayleigh_num = 0;
-        strcpy(compton_volume, "NULL");
-        strcpy(rayleigh_volume, "NULL");
+        primary_hit = false;
+        secondary_hit = false;
     }
 };
 
@@ -88,8 +81,8 @@ private:
 
     std::unique_ptr<GateCrfActorMessenger> _messenger;
 
-    CrfEventStats _eventToSave;
-    std::vector<CrfEventStats> _events;
+    CrfEvent _eventToSave;
+    bool _eventStarted;
     G4ThreeVector _orientation[3];
     GateVVolume* _crystalVolume;
     GateOutputTreeFileManager _file;
