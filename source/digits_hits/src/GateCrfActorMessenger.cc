@@ -31,6 +31,9 @@ void GateCrfActorMessenger::BuildCommands(G4String base)
 
     _setDebugLevelCmd = std::make_unique<G4UIcmdWithAnInteger>(G4String(base + "/setDebugLevel"), this);
     _setDebugLevelCmd->SetGuidance("Set Debug level.");
+
+    _setRrFactorCmd = std::make_unique<G4UIcmdWithAnInteger>(G4String(base + "/setRrFactor"), this);
+    _setDebugLevelCmd->SetGuidance("Set Russian Roulette factor for non-detected events.");
 }
 
 void GateCrfActorMessenger::SetNewValue(G4UIcommand *cmd, G4String newValue)
@@ -57,5 +60,9 @@ void GateCrfActorMessenger::SetNewValue(G4UIcommand *cmd, G4String newValue)
     else if (cmd == _setDebugLevelCmd.get())
     {
         _sensor->SetDebugLevel(_setDebugLevelCmd->ConvertToInt(newValue));
+    }
+    else if (cmd == _setRrFactorCmd.get())
+    {
+        _sensor->SetRrFactor(_setDebugLevelCmd->ConvertToInt(newValue));
     }
 }

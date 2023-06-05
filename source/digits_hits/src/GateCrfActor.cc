@@ -25,7 +25,7 @@ std::ostream& operator<<(std::ostream& os, const CrfEvent& event)
 
 GateCrfActor::GateCrfActor(G4String name, G4int depth)
     : GateVActor(name, depth), _messenger(new GateCrfActorMessenger(this)),
-      _crystalVolume(nullptr), _debugLevel(0)
+      _crystalVolume(nullptr), _debugLevel(0), _rrFactor(1)
 {
     _orientation[0] = G4ThreeVector(1.0, 0.0, 0.0);
     _orientation[1] = G4ThreeVector(0.0, 1.0, 0.0);
@@ -110,6 +110,7 @@ void GateCrfActor::Construct()
 void GateCrfActor::ResetData()
 {
     _eventStarted = false;
+    _rrCounter = 1;
 }
 
 void GateCrfActor::SaveData()
@@ -269,11 +270,35 @@ void GateCrfActor::EndOfEventAction(const G4Event* ev)
 {
     if (_eventStarted)
     {
-        _file.fill();
-
-        if (_debugLevel > 0)
+        bool saveEvent = false;
+        if (_eventToSave.detected_energy_MeV > 0)
         {
-            G4cout << _eventToSave << '\n';
+            saveEvent = true;
+        }
+        else
+        {
+            if (_rrCounter == _rrFactor)
+            {
+                saveEvent = true;
+                _rrCounter = 1;
+            }
+            else
+            {
+                if (_debugLevel > 0)
+                {
+                    G4cout << "skipped event:" << _eventToSave << "\n";
+                }
+                ++_rrCounter;
+            }
+        }
+
+        if (saveEvent)
+        {
+            _file.fill();
+            if (_debugLevel > 0)
+            {
+                G4cout << _eventToSave << '\n';
+            }
         }
 
         _eventStarted = false;

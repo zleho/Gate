@@ -76,6 +76,14 @@ public:
     {
         _debugLevel = level;
     }
+
+    void SetRrFactor(int factor)
+    {
+        if (factor >= 1)
+        {
+            _rrFactor = factor;
+        }
+    }
 private:
     GateCrfActor(G4String name, G4int depth = 0);
 
@@ -87,6 +95,8 @@ private:
     GateVVolume* _crystalVolume;
     GateOutputTreeFileManager _file;
     int _debugLevel;
+    int _rrFactor;
+    int _rrCounter;
 };
 
 MAKE_AUTO_CREATOR_ACTOR(CrfActor, GateCrfActor)
