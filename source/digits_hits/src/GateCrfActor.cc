@@ -248,10 +248,6 @@ void GateCrfActor::UserSteppingAction(const GateVVolume*, const G4Step* step)
                 G4cout << "after: " << _eventToSave << '\n';
             }
         }
-        else if (process->GetProcessName() == "RayleighScattering" || process->GetProcessName() == "Rayl")
-        {
-            _eventToSave.rayleigh_num += 1;
-        }
     }
     else
     {
