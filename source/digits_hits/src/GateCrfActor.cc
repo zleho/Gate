@@ -228,11 +228,9 @@ void GateCrfActor::UserSteppingAction(const GateVVolume*, const G4Step* step)
                 G4cout << "before: " << _eventToSave << '\n';
             }
             
-            _eventToSave.detected_x_mm = _eventToSave.detected_x_mm * _eventToSave.detected_energy_MeV + x_mm * energy_MeV;
-            _eventToSave.detected_y_mm = _eventToSave.detected_y_mm * _eventToSave.detected_energy_MeV + y_mm * energy_MeV;
+            _eventToSave.detected_x_mm += x_mm * energy_MeV;
+            _eventToSave.detected_y_mm += y_mm * energy_MeV;
             _eventToSave.detected_energy_MeV += energy_MeV;
-            _eventToSave.detected_x_mm /= _eventToSave.detected_energy_MeV;
-            _eventToSave.detected_y_mm /= _eventToSave.detected_energy_MeV;
 
             if (step->GetTrack()->GetTrackID() == 1)
             {
@@ -290,6 +288,12 @@ void GateCrfActor::EndOfEventAction(const G4Event* ev)
 
         if (saveEvent)
         {
+            if (_eventToSave.detected_energy_MeV > 0.0)
+            {
+                _eventToSave.detected_x_mm /= _eventToSave.detected_energy_MeV;
+                _eventToSave.detected_y_mm /= _eventToSave.detected_energy_MeV;
+            }
+
             _file.fill();
             if (_debugLevel > 0)
             {
